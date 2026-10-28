@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+echo "Running Helios Solar Direct Multi-Stage Pre-Commit Gate..."
+npm run precommit

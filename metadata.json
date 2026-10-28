@@ -1,0 +1,6 @@
+{
+  "name": "Helios Solar Direct",
+  "description": "Two-tier e-commerce storefront for solar generators, LiFePO4 batteries, monocrystalline panels, rechargeable fans, and hybrid inverters.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

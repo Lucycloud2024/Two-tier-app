@@ -1,0 +1,374 @@
+{
+  "entities": {
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Non-sensitive public profile record serving as the master parent identity gate for a customer.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication UID of the profile owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Customer display name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["uid", "displayName", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated customer PII and default delivery address stored in a restricted private subcollection.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication UID of the customer.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified customer email address.",
+          "minLength": 3,
+          "maxLength": 160,
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Delivery contact phone number.",
+          "minLength": 5,
+          "maxLength": 30
+        },
+        "shippingAddress": {
+          "type": "string",
+          "description": "Street delivery address.",
+          "minLength": 5,
+          "maxLength": 240
+        },
+        "shippingCity": {
+          "type": "string",
+          "description": "Delivery city or state.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "postalCode": {
+          "type": "string",
+          "description": "Postal or ZIP code.",
+          "minLength": 2,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "phone",
+        "shippingAddress",
+        "shippingCity",
+        "postalCode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CartItem": {
+      "title": "CartItem",
+      "description": "Individual solar product line item stored in the customer's persistent cloud cart subcollection.",
+      "type": "object",
+      "properties": {
+        "customerId": {
+          "type": "string",
+          "description": "UID of the cart owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Catalog identifier of the solar equipment.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productName": {
+          "type": "string",
+          "description": "Display name of the solar product.",
+          "minLength": 2,
+          "maxLength": 140
+        },
+        "category": {
+          "type": "string",
+          "description": "Solar product category slug.",
+          "enum": [
+            "solar-generator",
+            "solar-batteries",
+            "solar-panel",
+            "solar-fans",
+            "solar-inverter"
+          ],
+          "minLength": 5,
+          "maxLength": 32
+        },
+        "unitPriceCents": {
+          "type": "integer",
+          "description": "Unit price in USD cents."
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Selected item quantity (1 to 99)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "customerId",
+        "productId",
+        "productName",
+        "category",
+        "unitPriceCents",
+        "quantity",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer solar equipment purchase order header.",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "description": "Human-readable order reference number.",
+          "minLength": 6,
+          "maxLength": 32,
+          "pattern": "^HSD-[A-Z0-9\\-]+$"
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Firebase UID of the purchasing customer.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Recipient full name.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "shippingAddress": {
+          "type": "string",
+          "description": "Delivery street address.",
+          "minLength": 5,
+          "maxLength": 240
+        },
+        "shippingCity": {
+          "type": "string",
+          "description": "Delivery city and region.",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "shippingPhone": {
+          "type": "string",
+          "description": "Recipient contact phone.",
+          "minLength": 5,
+          "maxLength": 30
+        },
+        "postalCode": {
+          "type": "string",
+          "description": "Delivery postal code.",
+          "minLength": 2,
+          "maxLength": 20
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Selected payment settlement method.",
+          "enum": ["cod", "bank_transfer", "card"],
+          "minLength": 3,
+          "maxLength": 20
+        },
+        "subtotalCents": {
+          "type": "integer",
+          "description": "Order subtotal in USD cents."
+        },
+        "shippingCents": {
+          "type": "integer",
+          "description": "Freight delivery fee in USD cents."
+        },
+        "totalCents": {
+          "type": "integer",
+          "description": "Final order total in USD cents."
+        },
+        "itemCount": {
+          "type": "integer",
+          "description": "Total number of equipment units in the order."
+        },
+        "status": {
+          "type": "string",
+          "description": "Order lifecycle state.",
+          "enum": ["confirmed", "cancelled", "delivered"],
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "orderNumber",
+        "customerId",
+        "customerName",
+        "shippingAddress",
+        "shippingCity",
+        "shippingPhone",
+        "postalCode",
+        "paymentMethod",
+        "subtotalCents",
+        "shippingCents",
+        "totalCents",
+        "itemCount",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "OrderItem": {
+      "title": "OrderItem",
+      "description": "Immutable line item subcollection document belonging to an Order.",
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "description": "Parent order document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "customerId": {
+          "type": "string",
+          "description": "UID of the purchasing customer.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Solar product catalog ID.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productName": {
+          "type": "string",
+          "description": "Snapshot of solar product name at time of purchase.",
+          "minLength": 2,
+          "maxLength": 140
+        },
+        "category": {
+          "type": "string",
+          "description": "Solar category slug.",
+          "enum": [
+            "solar-generator",
+            "solar-batteries",
+            "solar-panel",
+            "solar-fans",
+            "solar-inverter"
+          ],
+          "minLength": 5,
+          "maxLength": 32
+        },
+        "unitPriceCents": {
+          "type": "integer",
+          "description": "Unit price in USD cents."
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Quantity purchased."
+        },
+        "lineTotalCents": {
+          "type": "integer",
+          "description": "Total line amount in USD cents."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": [
+        "orderId",
+        "customerId",
+        "productId",
+        "productName",
+        "category",
+        "unitPriceCents",
+        "quantity",
+        "lineTotalCents",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/public/{profileId}": {
+      "schema": { "$ref": "#/entities/UserPublicProfile" },
+      "description": "Customer public identity gate document (profileId fixed to 'profile')."
+    },
+    "/users/{userId}/private/{infoId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Customer isolated PII and delivery address (infoId fixed to 'info')."
+    },
+    "/users/{userId}/cart/{productId}": {
+      "schema": { "$ref": "#/entities/CartItem" },
+      "description": "Per-user persistent solar shopping cart line items."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer solar equipment orders."
+    },
+    "/orders/{orderId}/items/{itemId}": {
+      "schema": { "$ref": "#/entities/OrderItem" },
+      "description": "Individual solar equipment line items belonging to an order."
+    }
+  }
+}

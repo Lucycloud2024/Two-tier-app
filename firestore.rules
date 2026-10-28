@@ -1,0 +1,456 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 0: Global Default-Deny Catch-All Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HARDENED PRIMITIVES ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidProductId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidCategory(cat) {
+      return cat is string
+        && cat.size() >= 5
+        && cat.size() <= 32
+        && cat in ['solar-generator', 'solar-batteries', 'solar-panel', 'solar-fans', 'solar-inverter'];
+    }
+
+    // --- ENTITY VALIDATION BLUEPRINTS (Synced Verbatim with firebase-blueprint.json) ---
+
+    function isValidUserPublicProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'createdAt', 'updatedAt'])
+        && data.uid is string
+        && data.uid.size() >= 1
+        && data.uid.size() <= 128
+        && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == request.auth.uid
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 80
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data) {
+      return data.keys().hasAll([
+          'uid',
+          'email',
+          'phone',
+          'shippingAddress',
+          'shippingCity',
+          'postalCode',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'email',
+          'phone',
+          'shippingAddress',
+          'shippingCity',
+          'postalCode',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.uid is string
+        && data.uid.size() >= 1
+        && data.uid.size() <= 128
+        && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == request.auth.uid
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 160
+        && data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && data.phone is string
+        && data.phone.size() >= 5
+        && data.phone.size() <= 30
+        && data.shippingAddress is string
+        && data.shippingAddress.size() >= 5
+        && data.shippingAddress.size() <= 240
+        && data.shippingCity is string
+        && data.shippingCity.size() >= 2
+        && data.shippingCity.size() <= 80
+        && data.postalCode is string
+        && data.postalCode.size() >= 2
+        && data.postalCode.size() <= 20
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCartItem(data) {
+      return data.keys().hasAll([
+          'customerId',
+          'productId',
+          'productName',
+          'category',
+          'unitPriceCents',
+          'quantity',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'customerId',
+          'productId',
+          'productName',
+          'category',
+          'unitPriceCents',
+          'quantity',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.customerId is string
+        && data.customerId.size() >= 1
+        && data.customerId.size() <= 128
+        && data.customerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.customerId == request.auth.uid
+        && isValidProductId(data.productId)
+        && data.productName is string
+        && data.productName.size() >= 2
+        && data.productName.size() <= 140
+        && isValidCategory(data.category)
+        && data.unitPriceCents is int
+        && data.unitPriceCents >= 100
+        && data.unitPriceCents <= 50000000
+        && data.quantity is int
+        && data.quantity >= 1
+        && data.quantity <= 99
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'orderNumber',
+          'customerId',
+          'customerName',
+          'shippingAddress',
+          'shippingCity',
+          'shippingPhone',
+          'postalCode',
+          'paymentMethod',
+          'subtotalCents',
+          'shippingCents',
+          'totalCents',
+          'itemCount',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'orderNumber',
+          'customerId',
+          'customerName',
+          'shippingAddress',
+          'shippingCity',
+          'shippingPhone',
+          'postalCode',
+          'paymentMethod',
+          'subtotalCents',
+          'shippingCents',
+          'totalCents',
+          'itemCount',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.orderNumber is string
+        && data.orderNumber.size() >= 6
+        && data.orderNumber.size() <= 32
+        && data.orderNumber.matches('^HSD-[A-Z0-9\\-]+$')
+        && data.customerId is string
+        && data.customerId.size() >= 1
+        && data.customerId.size() <= 128
+        && data.customerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.customerId == request.auth.uid
+        && data.customerName is string
+        && data.customerName.size() >= 2
+        && data.customerName.size() <= 80
+        && data.shippingAddress is string
+        && data.shippingAddress.size() >= 5
+        && data.shippingAddress.size() <= 240
+        && data.shippingCity is string
+        && data.shippingCity.size() >= 2
+        && data.shippingCity.size() <= 80
+        && data.shippingPhone is string
+        && data.shippingPhone.size() >= 5
+        && data.shippingPhone.size() <= 30
+        && data.postalCode is string
+        && data.postalCode.size() >= 2
+        && data.postalCode.size() <= 20
+        && data.paymentMethod is string
+        && data.paymentMethod.size() >= 3
+        && data.paymentMethod.size() <= 20
+        && data.paymentMethod in ['cod', 'bank_transfer', 'card']
+        && data.subtotalCents is int
+        && data.subtotalCents >= 100
+        && data.subtotalCents <= 500000000
+        && data.shippingCents is int
+        && data.shippingCents >= 0
+        && data.shippingCents <= 5000000
+        && data.totalCents is int
+        && data.totalCents == data.subtotalCents + data.shippingCents
+        && data.itemCount is int
+        && data.itemCount >= 1
+        && data.itemCount <= 500
+        && data.status is string
+        && data.status.size() >= 4
+        && data.status.size() <= 20
+        && data.status in ['confirmed', 'cancelled', 'delivered']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidOrderItem(data) {
+      return data.keys().hasAll([
+          'orderId',
+          'customerId',
+          'productId',
+          'productName',
+          'category',
+          'unitPriceCents',
+          'quantity',
+          'lineTotalCents',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'orderId',
+          'customerId',
+          'productId',
+          'productName',
+          'category',
+          'unitPriceCents',
+          'quantity',
+          'lineTotalCents',
+          'createdAt'
+        ])
+        && isValidId(data.orderId)
+        && data.customerId is string
+        && data.customerId.size() >= 1
+        && data.customerId.size() <= 128
+        && data.customerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.customerId == request.auth.uid
+        && isValidProductId(data.productId)
+        && data.productName is string
+        && data.productName.size() >= 2
+        && data.productName.size() <= 140
+        && isValidCategory(data.category)
+        && data.unitPriceCents is int
+        && data.unitPriceCents >= 100
+        && data.unitPriceCents <= 50000000
+        && data.quantity is int
+        && data.quantity >= 1
+        && data.quantity <= 99
+        && data.lineTotalCents is int
+        && data.lineTotalCents == data.unitPriceCents * data.quantity
+        && data.createdAt is timestamp;
+    }
+
+    // --- 1. USER PUBLIC PROFILE (Master Identity Parent Gate) ---
+    match /users/{userId}/public/{profileId} {
+      allow get: if isSignedIn()
+        && isValidId(userId)
+        && profileId == 'profile'
+        && request.auth.uid == userId;
+
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && profileId == 'profile'
+        && request.auth.uid == userId
+        && isValidUserPublicProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && profileId == 'profile'
+        && request.auth.uid == userId
+        && isValidUserPublicProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    // --- 2. USER PRIVATE PII INFO (Split-Collection PII Isolation) ---
+    match /users/{userId}/private/{infoId} {
+      allow get: if isVerifiedUser()
+        && isValidId(userId)
+        && infoId == 'info'
+        && request.auth.uid == userId
+        && get(/databases/$(database)/documents/users/$(userId)/public/profile).data.uid == request.auth.uid;
+
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && infoId == 'info'
+        && request.auth.uid == userId
+        && isValidUserPrivateInfo(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && get(/databases/$(database)/documents/users/$(userId)/public/profile).data.uid == request.auth.uid;
+
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && infoId == 'info'
+        && request.auth.uid == userId
+        && isValidUserPrivateInfo(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'email',
+          'phone',
+          'shippingAddress',
+          'shippingCity',
+          'postalCode',
+          'updatedAt'
+        ])
+        && get(/databases/$(database)/documents/users/$(userId)/public/profile).data.uid == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+    // --- 3. PERSISTENT CUSTOMER CART SUBCOLLECTION ---
+    match /users/{userId}/cart/{productId} {
+      allow get: if isSignedIn()
+        && isValidId(userId)
+        && isValidProductId(productId)
+        && request.auth.uid == userId
+        && (resource == null || existing().customerId == request.auth.uid)
+        && get(/databases/$(database)/documents/users/$(userId)/public/profile).data.uid == request.auth.uid;
+
+      allow list: if isSignedIn()
+        && request.auth.uid == userId
+        && resource.data.customerId == request.auth.uid;
+
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidProductId(productId)
+        && request.auth.uid == userId
+        && isValidCartItem(incoming())
+        && incoming().productId == productId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && get(/databases/$(database)/documents/users/$(userId)/public/profile).data.uid == request.auth.uid;
+
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidProductId(productId)
+        && request.auth.uid == userId
+        && isValidCartItem(incoming())
+        && incoming().customerId == existing().customerId
+        && incoming().productId == existing().productId
+        && incoming().productName == existing().productName
+        && incoming().category == existing().category
+        && incoming().unitPriceCents == existing().unitPriceCents
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['quantity', 'updatedAt'])
+        && get(/databases/$(database)/documents/users/$(userId)/public/profile).data.uid == request.auth.uid;
+
+      allow delete: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidProductId(productId)
+        && request.auth.uid == userId
+        && existing().customerId == request.auth.uid
+        && get(/databases/$(database)/documents/users/$(userId)/public/profile).data.uid == request.auth.uid;
+    }
+
+    // --- 4. CUSTOMER SOLAR ORDERS ---
+    match /orders/{orderId} {
+      allow get: if isSignedIn()
+        && isValidId(orderId)
+        && existing().customerId == request.auth.uid;
+
+      allow list: if isSignedIn()
+        && resource.data.customerId == request.auth.uid;
+
+      allow create: if isVerifiedUser()
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().status == 'confirmed'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/public/profile)
+        && existsAfter(/databases/$(database)/documents/orders/$(orderId)/items/item_0);
+
+      allow update: if isVerifiedUser()
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && existing().customerId == request.auth.uid
+        && !(existing().status in ['cancelled', 'delivered'])
+        && incoming().orderNumber == existing().orderNumber
+        && incoming().customerId == existing().customerId
+        && incoming().customerName == existing().customerName
+        && incoming().shippingAddress == existing().shippingAddress
+        && incoming().shippingCity == existing().shippingCity
+        && incoming().shippingPhone == existing().shippingPhone
+        && incoming().postalCode == existing().postalCode
+        && incoming().paymentMethod == existing().paymentMethod
+        && incoming().subtotalCents == existing().subtotalCents
+        && incoming().shippingCents == existing().shippingCents
+        && incoming().totalCents == existing().totalCents
+        && incoming().itemCount == existing().itemCount
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Customer Cancel Confirmed Order
+          (existing().status == 'confirmed'
+            && incoming().status == 'cancelled'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        );
+
+      allow delete: if false;
+
+      // --- 5. ORDER LINE ITEMS SUBCOLLECTION (Master Gate + Batch Atomicity) ---
+      match /items/{itemId} {
+        allow get: if isSignedIn()
+          && isValidId(orderId)
+          && isValidId(itemId)
+          && existing().customerId == request.auth.uid
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid;
+
+        allow list: if isSignedIn()
+          && resource.data.customerId == request.auth.uid;
+
+        allow create: if isVerifiedUser()
+          && isValidId(orderId)
+          && isValidId(itemId)
+          && isValidOrderItem(incoming())
+          && incoming().orderId == orderId
+          && incoming().createdAt == request.time
+          && !exists(/databases/$(database)/documents/orders/$(orderId))
+          && getAfter(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid
+          && getAfter(/databases/$(database)/documents/orders/$(orderId)).data.status == 'confirmed';
+
+        allow update, delete: if false;
+      }
+    }
+  }
+}
